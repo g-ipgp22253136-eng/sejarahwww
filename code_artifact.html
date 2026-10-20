@@ -1,0 +1,855 @@
+<!DOCTYPE html>
+<html lang="zh-MY">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>萌宠历史航海连连看与拼图寻宝 - 五年级历史全册</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- FontAwesome Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@400;600;700&family=ZCOOL+KuaiLe&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Fredoka', 'Microsoft YaHei', sans-serif;
+            background: linear-gradient(135deg, #e0f2fe 0%, #bae6fd 50%, #fef08a 100%);
+            color: #1e293b;
+            user-select: none;
+            overflow-x: hidden;
+        }
+        .title-font {
+            font-family: 'ZCOOL KuaiLe', cursive, sans-serif;
+        }
+        .cute-card {
+            background: rgba(255, 255, 255, 0.92);
+            backdrop-filter: blur(10px);
+            border: 4px solid #38bdf8;
+            box-shadow: 0 12px 28px -5px rgba(56, 189, 248, 0.35);
+            border-radius: 2rem;
+        }
+        .cute-btn {
+            transition: all 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            box-shadow: 0 6px 0px #0284c7;
+        }
+        .cute-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 0px #0284c7;
+        }
+        .cute-btn:active {
+            transform: translateY(4px);
+            box-shadow: 0 2px 0px #0284c7;
+        }
+        .bounce-anim {
+            animation: bounce 2s infinite;
+        }
+        @keyframes bounce {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-8px); }
+        }
+        .pulse-star {
+            animation: pulse 1.5s infinite;
+        }
+        @keyframes pulse {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.18); }
+        }
+        /* 拼图格样式 */
+        .puzzle-slot {
+            border: 3px dashed #94a3b8;
+            background: rgba(241, 245, 249, 0.8);
+            transition: all 0.2s;
+        }
+        .puzzle-slot.hovered {
+            border-color: #0284c7;
+            background: #e0f2fe;
+        }
+        .puzzle-piece {
+            cursor: grab;
+            transition: transform 0.15s ease, box-shadow 0.15s ease;
+        }
+        .puzzle-piece:active {
+            cursor: grabbing;
+            transform: scale(1.05);
+        }
+        /* 连连看匹配卡片 */
+        .match-card {
+            transition: all 0.25s cubic-bezier(0.34, 1.56, 0.64, 1);
+        }
+        .match-card.selected {
+            transform: scale(1.06);
+            border-color: #f59e0b !important;
+            box-shadow: 0 0 15px rgba(245, 158, 11, 0.6);
+        }
+        .match-card.matched {
+            visibility: hidden;
+            opacity: 0;
+            pointer-events: none;
+        }
+    </style>
+</head>
+<body class="min-h-screen flex flex-col justify-between p-2 sm:p-5">
+
+    <!-- 顶部标题栏 & 萌宠导航 -->
+    <header class="max-w-4xl mx-auto w-full cute-card p-3 sm:p-4 mb-4 flex justify-between items-center border-sky-400">
+        <div class="flex items-center space-x-3">
+            <div class="w-12 h-12 bg-sky-400 rounded-full flex items-center justify-center text-white text-3xl shadow-inner bounce-anim">
+                ⛵
+            </div>
+            <div>
+                <h1 class="title-font text-2xl sm:text-3xl text-sky-600 tracking-wide">萌宠历史航海连连看与拼图</h1>
+                <p class="text-xs text-sky-800 font-bold">五年级历史（单元一 ~ 单元七 冒险全集）</p>
+            </div>
+        </div>
+        <div class="flex items-center space-x-3 sm:space-x-5">
+            <div class="bg-amber-100 border-2 border-amber-300 px-3 py-1.5 rounded-2xl flex items-center space-x-2">
+                <span class="text-2xl pulse-star">⭐</span>
+                <span id="scoreText" class="font-extrabold text-xl text-amber-600">0</span>
+            </div>
+            <div id="livesContainer" class="flex space-x-1 text-2xl">
+                <span>❤️</span><span>❤️</span><span>❤️</span>
+            </div>
+        </div>
+    </header>
+
+    <!-- 主游戏界面 -->
+    <main class="max-w-4xl mx-auto w-full flex-grow flex items-center justify-center">
+
+        <!-- 游戏大厅屏幕 -->
+        <div id="lobbyScreen" class="cute-card p-5 sm:p-8 w-full text-center relative border-sky-400">
+            <div class="flex justify-center mb-2 space-x-4 text-4xl sm:text-5xl">
+                <span class="bounce-anim" style="animation-delay: 0s;">🐯</span>
+                <span class="bounce-anim" style="animation-delay: 0.2s;">🐘</span>
+                <span class="bounce-anim" style="animation-delay: 0.4s;">🦜</span>
+                <span class="bounce-anim" style="animation-delay: 0.6s;">🦁</span>
+            </div>
+            <h2 class="title-font text-2xl sm:text-4xl text-sky-600 mb-2">选择历史探险单元！</h2>
+            <p class="text-slate-600 mb-6 text-xs sm:text-base font-semibold">和小虎、小象、鹦鹉船长与狮子王一起挑战五年级历史完整关卡！</p>
+
+            <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4 mb-8">
+                <!-- 模式 1: 单元一 -->
+                <div onclick="selectGame(1)" class="bg-amber-50 border-4 border-amber-300 hover:border-amber-400 rounded-3xl p-4 hover:scale-105 transition transform cursor-pointer flex flex-col justify-between shadow-md">
+                    <div>
+                        <div class="text-3xl mb-1">👑</div>
+                        <span class="bg-amber-200 text-amber-800 text-[10px] px-2 py-0.5 rounded-full font-bold">单元一</span>
+                        <h3 class="title-font text-base text-amber-700 mt-1">皇冠保卫拼图</h3>
+                        <p class="text-[11px] text-slate-500 mt-1">拖拽拼图碎片，拼出君主立宪与元首制度！</p>
+                    </div>
+                    <button class="mt-3 cute-btn bg-amber-400 hover:bg-amber-500 text-white font-bold py-1.5 rounded-xl text-xs title-font">
+                        开始拼图 <i class="fa-solid fa-puzzle-piece ml-1"></i>
+                    </button>
+                </div>
+
+                <!-- 模式 2: 单元二 -->
+                <div onclick="selectGame(2)" class="bg-emerald-50 border-4 border-emerald-300 hover:border-emerald-400 rounded-3xl p-4 hover:scale-105 transition transform cursor-pointer flex flex-col justify-between shadow-md">
+                    <div>
+                        <div class="text-3xl mb-1">🕌</div>
+                        <span class="bg-emerald-200 text-emerald-800 text-[10px] px-2 py-0.5 rounded-full font-bold">单元二</span>
+                        <h3 class="title-font text-base text-emerald-700 mt-1">伊斯兰历史连连看</h3>
+                        <p class="text-[11px] text-slate-500 mt-1">消除传线法典与宪法条文卡片对！</p>
+                    </div>
+                    <button class="mt-3 cute-btn bg-emerald-400 hover:bg-emerald-500 text-white font-bold py-1.5 rounded-xl text-xs title-font" style="box-shadow: 0 4px 0px #059669;">
+                        开始连连看 <i class="fa-solid fa-link ml-1"></i>
+                    </button>
+                </div>
+
+                <!-- 模式 3: 单元三 -->
+                <div onclick="selectGame(3)" class="bg-sky-50 border-4 border-sky-300 hover:border-sky-400 rounded-3xl p-4 hover:scale-105 transition transform cursor-pointer flex flex-col justify-between shadow-md">
+                    <div>
+                        <div class="text-3xl mb-1">🗺️</div>
+                        <span class="bg-sky-200 text-sky-800 text-[10px] px-2 py-0.5 rounded-full font-bold">单元三</span>
+                        <h3 class="title-font text-base text-sky-700 mt-1">马来语地图寻宝</h3>
+                        <p class="text-[11px] text-slate-500 mt-1">搜集南岛语系与通用语的古代与现代秘密！</p>
+                    </div>
+                    <button class="mt-3 cute-btn bg-sky-400 hover:bg-sky-500 text-white font-bold py-1.5 rounded-xl text-xs title-font">
+                        开始寻宝 <i class="fa-solid fa-compass ml-1"></i>
+                    </button>
+                </div>
+
+                <!-- 模式 4: 单元四 -->
+                <div onclick="selectGame(4)" class="bg-rose-50 border-4 border-rose-300 hover:border-rose-400 rounded-3xl p-4 hover:scale-105 transition transform cursor-pointer flex flex-col justify-between shadow-md">
+                    <div>
+                        <div class="text-3xl mb-1">🛡️</div>
+                        <span class="bg-rose-200 text-rose-800 text-[10px] px-2 py-0.5 rounded-full font-bold">单元四</span>
+                        <h3 class="title-font text-base text-rose-700 mt-1">国家主权保卫连线</h3>
+                        <p class="text-[11px] text-slate-500 mt-1">破解外来势力干政与殖民统治社会经济影响！</p>
+                    </div>
+                    <button class="mt-3 cute-btn bg-rose-400 hover:bg-rose-500 text-white font-bold py-1.5 rounded-xl text-xs title-font" style="box-shadow: 0 4px 0px #e11d48;">
+                        保卫主权 <i class="fa-solid fa-shield-halved ml-1"></i>
+                    </button>
+                </div>
+
+                <!-- 模式 5: 单元五 -->
+                <div onclick="selectGame(5)" class="bg-orange-50 border-4 border-orange-300 hover:border-orange-400 rounded-3xl p-4 hover:scale-105 transition transform cursor-pointer flex flex-col justify-between shadow-md">
+                    <div>
+                        <div class="text-3xl mb-1">🗡️</div>
+                        <span class="bg-orange-200 text-orange-800 text-[10px] px-2 py-0.5 rounded-full font-bold">单元五</span>
+                        <h3 class="title-font text-base text-orange-700 mt-1">地方英雄抗争拼图</h3>
+                        <p class="text-[11px] text-slate-500 mt-1">重现多赛益、仁答、督江谷抗英英雄图谱！</p>
+                    </div>
+                    <button class="mt-3 cute-btn bg-orange-400 hover:bg-orange-500 text-white font-bold py-1.5 rounded-xl text-xs title-font" style="box-shadow: 0 4px 0px #c2410c;">
+                        英雄拼图 <i class="fa-solid fa-khanda ml-1"></i>
+                    </button>
+                </div>
+
+                <!-- 模式 6: 单元六 -->
+                <div onclick="selectGame(6)" class="bg-purple-50 border-4 border-purple-300 hover:border-purple-400 rounded-3xl p-4 hover:scale-105 transition transform cursor-pointer flex flex-col justify-between shadow-md">
+                    <div>
+                        <div class="text-3xl mb-1">🎆</div>
+                        <span class="bg-purple-200 text-purple-800 text-[10px] px-2 py-0.5 rounded-full font-bold">单元六</span>
+                        <h3 class="title-font text-base text-purple-700 mt-1">独立航程寻宝</h3>
+                        <p class="text-[11px] text-slate-500 mt-1">重温东姑阿都拉曼争取独立的伟大历程！</p>
+                    </div>
+                    <button class="mt-3 cute-btn bg-purple-400 hover:bg-purple-500 text-white font-bold py-1.5 rounded-xl text-xs title-font" style="box-shadow: 0 4px 0px #6b21a8;">
+                        高呼 Merdeka <i class="fa-solid fa-flag ml-1"></i>
+                    </button>
+                </div>
+
+                <!-- 模式 7: 单元七 -->
+                <div onclick="selectGame(7)" class="bg-indigo-50 border-4 border-indigo-300 hover:border-indigo-400 rounded-3xl p-4 hover:scale-105 transition transform cursor-pointer flex flex-col justify-between shadow-md col-span-1 sm:col-span-2 md:col-span-2">
+                    <div>
+                        <div class="text-3xl mb-1">⚜️</div>
+                        <span class="bg-indigo-200 text-indigo-800 text-[10px] px-2 py-0.5 rounded-full font-bold">单元七</span>
+                        <h3 class="title-font text-base text-indigo-700 mt-1">最高元首御用宝藏</h3>
+                        <p class="text-[11px] text-slate-500 mt-1">破解统治者会议选元首机制、御用器具与立宪职权！</p>
+                    </div>
+                    <button class="mt-3 cute-btn bg-indigo-500 hover:bg-indigo-600 text-white font-bold py-1.5 rounded-xl text-xs title-font" style="box-shadow: 0 4px 0px #3730a3;">
+                        开启尊贵宝藏 <i class="fa-solid fa-gem ml-1"></i>
+                    </button>
+                </div>
+            </div>
+
+            <div class="flex flex-col sm:flex-row justify-center items-center gap-4">
+                <button onclick="openReview()" class="cute-btn bg-amber-400 hover:bg-amber-500 text-white font-bold py-3 px-8 rounded-2xl text-base title-font" style="box-shadow: 0 6px 0px #d97706;">
+                    📖 萌萌历史全册宝典（复习卡）
+                </button>
+            </div>
+        </div>
+
+        <!-- 游戏游玩屏幕 -->
+        <div id="gamePlayScreen" class="hidden cute-card p-4 sm:p-6 w-full text-center relative border-sky-400">
+            <div class="flex justify-between items-center mb-4 border-b-2 border-sky-200 pb-3">
+                <button onclick="backToLobby()" class="text-slate-500 hover:text-sky-600 font-bold text-sm flex items-center bg-slate-100 hover:bg-slate-200 px-3 py-1.5 rounded-xl border border-slate-300">
+                    <i class="fa-solid fa-house mr-1.5"></i> 返回大厅
+                </button>
+                <div id="levelTitle" class="title-font text-xl sm:text-2xl text-sky-600">
+                    <!-- 动态设置标题 -->
+                </div>
+                <div id="levelBadge" class="bg-sky-200 text-sky-800 text-xs px-3 py-1 rounded-full font-bold">
+                    单元一
+                </div>
+            </div>
+
+            <!-- 动态渲染游戏区 -->
+            <div id="gameContainer" class="min-h-[380px] flex flex-col justify-center items-center">
+                <!-- 游戏动态生成 -->
+            </div>
+        </div>
+
+    </main>
+
+    <!-- 萌萌历史宝典（知识卡片 Modal） -->
+    <div id="reviewModal" class="hidden fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center p-4 z-50">
+        <div class="cute-card max-w-2xl w-full max-h-[85vh] p-6 overflow-y-auto bg-white border-4 border-purple-300 shadow-2xl">
+            <div class="flex justify-between items-center mb-4 border-b-2 border-purple-100 pb-2">
+                <h3 class="title-font text-2xl text-purple-600 flex items-center">
+                    <span class="mr-2">📖</span> 萌萌历史全册宝典
+                </h3>
+                <button onclick="closeReview()" class="text-slate-400 hover:text-purple-600 text-2xl font-bold">✖</button>
+            </div>
+
+            <div class="space-y-4 text-left text-sm">
+                <!-- 单元 1 -->
+                <div class="bg-amber-50 p-4 rounded-2xl border-2 border-amber-200">
+                    <h4 class="title-font text-amber-700 text-base sm:text-lg mb-1">👑 单元一：君主立宪是国家保护伞</h4>
+                    <ul class="list-disc list-inside space-y-1 text-slate-600">
+                        <li><strong>君主演变：</strong>马六甲王朝（绝对君权）➔ 英殖民（顾问制）➔ 日据（日本统治）➔ 独立至今（君主立宪）。</li>
+                        <li><strong>元首地位：</strong>国家最高首脑，遵守宪法行使权力，任期 5 年。</li>
+                        <li><strong>效忠君国：</strong>国家原则第二条“忠于君国”，体现国民对君主和国家的敬重。</li>
+                    </ul>
+                </div>
+                <!-- 单元 2 -->
+                <div class="bg-emerald-50 p-4 rounded-2xl border-2 border-emerald-200">
+                    <h4 class="title-font text-emerald-700 text-base sm:text-lg mb-1">🕌 单元二：马来西亚的伊斯兰教</h4>
+                    <ul class="list-disc list-inside space-y-1 text-slate-600">
+                        <li><strong>传入途径：</strong>阿拉伯、印度和中国商人及传教士通过马六甲港口带入。</li>
+                        <li><strong>重要法律：</strong>《马六甲法典》（民事与行政）和《马六甲海事法典》（航海与贸易）。</li>
+                        <li><strong>宪法地位：</strong>《联邦宪法》规定伊斯兰教为联邦宗教，其他宗教可和平奉行。</li>
+                    </ul>
+                </div>
+                <!-- 单元 3 -->
+                <div class="bg-sky-50 p-4 rounded-2xl border-2 border-sky-200">
+                    <h4 class="title-font text-sky-700 text-base sm:text-lg mb-1">⛵ 单元三：马来语是我们的遗产</h4>
+                    <ul class="list-disc list-inside space-y-1 text-slate-600">
+                        <li><strong>语系：</strong>属于**南岛语系 (Austronesia)**。</li>
+                        <li><strong>古代作用：</strong>通用语 (Lingua Franca)、商业贸易语言、外交和知识学术语言。</li>
+                        <li><strong>现代作用：</strong>国语、官方语言、教学媒介语及团结多元种族的纽带。</li>
+                    </ul>
+                </div>
+                <!-- 单元 4 -->
+                <div class="bg-rose-50 p-4 rounded-2xl border-2 border-rose-200">
+                    <h4 class="title-font text-rose-700 text-base sm:text-lg mb-1">🛡️ 单元四：国家主权的挑战</h4>
+                    <ul class="list-disc list-inside space-y-1 text-slate-600">
+                        <li><strong>外来势力：</strong>暹罗、葡萄牙、荷兰、英国、日本及泰国的侵略与统治。</li>
+                        <li><strong>干政方式：</strong>通过签订不平等条约（如《邦咯条约》）、顾问制与参政司干政。</li>
+                        <li><strong>统治影响：</strong>
+                            <br>• 行政：引入英式行政与法律，削弱苏丹及地方领袖权力。
+                            <br>• 经济：开采锡矿、种植橡胶，引进大量外籍劳工，形成双重经济。
+                            <br>• 社会：形成多元种族社会、按种族分居与分工的模式。
+                        </li>
+                    </ul>
+                </div>
+                <!-- 单元 5 -->
+                <div class="bg-orange-50 p-4 rounded-2xl border-2 border-orange-200">
+                    <h4 class="title-font text-orange-700 text-base sm:text-lg mb-1">🗡️ 单元五：地方领袖的起义和抗争</h4>
+                    <ul class="list-disc list-inside space-y-1 text-slate-600">
+                        <li><strong>多赛益 (Dol Said)：</strong>南宁 (Naning) 领袖，反对英国强征 1/10 税收，发动南宁战争。</li>
+                        <li><strong>仁答 (Rentap)：</strong>沙捞越伊班族英雄，反对布鲁克王朝视伊班人海盗行为，高喊“Agi Idup, Agi Nsumbang”。</li>
+                        <li><strong>督江谷 (Tok Jangkut)：</strong>吉兰丹英雄，反抗英国征收人头税与土地税，进攻巴西马 (Pasir Puteh)。</li>
+                        <li><strong>昂哥哈芝末 (Hassan)：</strong>登嘉楼抗英领袖，反对英国土地法案。</li>
+                    </ul>
+                </div>
+                <!-- 单元 6 -->
+                <div class="bg-purple-50 p-4 rounded-2xl border-2 border-purple-200">
+                    <h4 class="title-font text-purple-700 text-base sm:text-lg mb-1">🎆 单元六：国家独立的历史</h4>
+                    <ul class="title-font list-disc list-inside space-y-1 text-slate-600">
+                        <li><strong>争取独立斗士：</strong>东姑阿都拉曼 (Tunku Abdul Rahman)、敦阿都拉萨、敦陈祯禄、敦善班丹。</li>
+                        <li><strong>独立历程：</strong>组建联盟党 ➔ 1955年大选胜出 ➔ 伦敦独立谈判 ➔ 签署《1957年马来亚联合邦协定》。</li>
+                        <li><strong>独立之夜：</strong>1957年8月31日，最高元首在默迪卡体育场高呼 7 声 “MERDEKA”！</li>
+                    </ul>
+                </div>
+                <!-- 单元 7 -->
+                <div class="bg-indigo-50 p-4 rounded-2xl border-2 border-indigo-200">
+                    <h4 class="title-font text-indigo-700 text-base sm:text-lg mb-1">⚜️ 单元七：国家元首是国家主权的核心</h4>
+                    <ul class="list-disc list-inside space-y-1 text-slate-600">
+                        <li><strong>委任方式：</strong>由**统治者会议 (Majlis Raja-Raja)** 在 9 位马来州属苏丹/拉惹中轮流选出，任期 5 年。</li>
+                        <li><strong>御用器具：</strong>皇家世袭短剑 (Keris Panjang Diraja)、元首礼服 (Muskat)、皇冠 (Tengkolok Diraja)。</li>
+                        <li><strong>宪法职权：</strong>三军最高统帅、委任首相、维护伊斯兰教及特权、代表国家外交。</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <footer class="mt-4 text-center text-xs text-sky-700 font-bold">
+        五年级历史（单元一 ~ 单元七）互动学习游戏 &copy; 2026
+    </footer>
+
+    <!-- 游戏脚本 -->
+    <script>
+        // Web Audio API 音效生成器
+        const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+        function playSound(type) {
+            if (audioCtx.state === 'suspended') audioCtx.resume();
+            const osc = audioCtx.createOscillator();
+            const gain = audioCtx.createGain();
+            osc.connect(gain);
+            gain.connect(audioCtx.destination);
+
+            if (type === 'correct') {
+                osc.type = 'sine';
+                osc.frequency.setValueAtTime(523.25, audioCtx.currentTime); // C5
+                osc.frequency.setValueAtTime(659.25, audioCtx.currentTime + 0.08); // E5
+                osc.frequency.setValueAtTime(783.99, audioCtx.currentTime + 0.16); // G5
+                gain.gain.setValueAtTime(0.25, audioCtx.currentTime);
+                gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.35);
+                osc.start();
+                osc.stop(audioCtx.currentTime + 0.35);
+            } else if (type === 'wrong') {
+                osc.type = 'triangle';
+                osc.frequency.setValueAtTime(220, audioCtx.currentTime); 
+                osc.frequency.setValueAtTime(160, audioCtx.currentTime + 0.12);
+                gain.gain.setValueAtTime(0.25, audioCtx.currentTime);
+                gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.28);
+                osc.start();
+                osc.stop(audioCtx.currentTime + 0.28);
+            } else if (type === 'pop') {
+                osc.type = 'sine';
+                osc.frequency.setValueAtTime(400, audioCtx.currentTime);
+                osc.frequency.exponentialRampToValueAtTime(800, audioCtx.currentTime + 0.05);
+                gain.gain.setValueAtTime(0.15, audioCtx.currentTime);
+                gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.08);
+                osc.start();
+                osc.stop(audioCtx.currentTime + 0.08);
+            }
+        }
+
+        let score = 0;
+        let lives = 3;
+
+        function updateHeader() {
+            document.getElementById('scoreText').textContent = score;
+            const container = document.getElementById('livesContainer');
+            container.innerHTML = '';
+            for (let i = 0; i < 3; i++) {
+                container.innerHTML += i < lives ? '❤️' : '🤍';
+            }
+        }
+
+        function openReview() { document.getElementById('reviewModal').classList.remove('hidden'); }
+        function closeReview() { document.getElementById('reviewModal').classList.add('hidden'); }
+
+        function backToLobby() {
+            document.getElementById('gamePlayScreen').classList.add('hidden');
+            document.getElementById('lobbyScreen').classList.remove('hidden');
+        }
+
+        function selectGame(mode) {
+            document.getElementById('lobbyScreen').classList.add('hidden');
+            document.getElementById('gamePlayScreen').classList.remove('hidden');
+
+            const title = document.getElementById('levelTitle');
+            const badge = document.getElementById('levelBadge');
+
+            if (mode === 1) {
+                title.textContent = "👑 单元一：皇冠知识拼图保卫战";
+                badge.textContent = "单元一";
+                badge.className = "bg-amber-200 text-amber-800 text-xs px-3 py-1 rounded-full font-bold";
+                startUnit1Puzzle();
+            } else if (mode === 2) {
+                title.textContent = "🕌 单元二：伊斯兰历史萌宠连连看";
+                badge.textContent = "单元二";
+                badge.className = "bg-emerald-200 text-emerald-800 text-xs px-3 py-1 rounded-full font-bold";
+                startUnit2Match();
+            } else if (mode === 3) {
+                title.textContent = "⛵ 单元三：马来语航海大地图寻宝";
+                badge.textContent = "单元三";
+                badge.className = "bg-sky-200 text-sky-800 text-xs px-3 py-1 rounded-full font-bold";
+                startUnit3MapNav();
+            } else if (mode === 4) {
+                title.textContent = "🛡️ 单元四：国家主权的挑战连连看";
+                badge.textContent = "单元四";
+                badge.className = "bg-rose-200 text-rose-800 text-xs px-3 py-1 rounded-full font-bold";
+                startUnit4Match();
+            } else if (mode === 5) {
+                title.textContent = "🗡️ 单元五：地方英雄抗争大拼图";
+                badge.textContent = "单元五";
+                badge.className = "bg-orange-200 text-orange-800 text-xs px-3 py-1 rounded-full font-bold";
+                startUnit5Puzzle();
+            } else if (mode === 6) {
+                title.textContent = "🎆 单元六：争取独立的航程寻宝";
+                badge.textContent = "单元六";
+                badge.className = "bg-purple-200 text-purple-800 text-xs px-3 py-1 rounded-full font-bold";
+                startUnit6Quiz();
+            } else if (mode === 7) {
+                title.textContent = "⚜️ 单元七：最高元首御用器具与职权大闯关";
+                badge.textContent = "单元七";
+                badge.className = "bg-indigo-200 text-indigo-800 text-xs px-3 py-1 rounded-full font-bold";
+                startUnit7Match();
+            }
+        }
+
+        // ===================================================
+        // 通用拼图与连连看与问答引擎
+        // ===================================================
+
+        // ------------------ 单元一拼图 ------------------
+        const puzzleData1 = [
+            { id: "p1", label: "马六甲王朝", text: "绝对君权制度", icon: "👑" },
+            { id: "p2", label: "英殖民时期", text: "顾问制度", icon: "📜" },
+            { id: "p3", label: "国家最高首脑", text: "国家元首 (YDP Agong)", icon: "🏛️" },
+            { id: "p4", label: "国家原则第二条", text: "忠于君国", icon: "🛡️" }
+        ];
+
+        // ------------------ 单元五拼图 ------------------
+        const puzzleData5 = [
+            { id: "u5_1", label: "多赛益 (Dol Said)", text: "反抗英国征收1/10南宁税收", icon: "🏹" },
+            { id: "u5_2", label: "仁答 (Rentap)", text: "砂拉越伊班英雄『永不投降』", icon: "🛡️" },
+            { id: "u5_3", label: "督江谷 (Tok Jangkut)", text: "进攻巴西马反抗土地人头税", icon: "🗡️" },
+            { id: "u5_4", label: "昂哥哈芝末 (Hassan)", text: "反对登嘉楼土地法案起义", icon: "📜" }
+        ];
+
+        let puzzleState = {};
+        let currentPuzzleData = [];
+
+        function startUnit1Puzzle() {
+            currentPuzzleData = puzzleData1;
+            runPuzzleGame("👑 单元一：君主立宪保卫战拼图", "amber");
+        }
+
+        function startUnit5Puzzle() {
+            currentPuzzleData = puzzleData5;
+            runPuzzleGame("🗡️ 单元五：抗英地方英雄拼图", "orange");
+        }
+
+        function runPuzzleGame(titleText, themeColor) {
+            puzzleState = {};
+            const container = document.getElementById('gameContainer');
+            const shuffled = [...currentPuzzleData].sort(() => Math.random() - 0.5);
+
+            container.innerHTML = `
+                <p class="text-xs sm:text-sm text-${themeColor}-800 font-bold mb-4 bg-${themeColor}-100 px-4 py-2 rounded-2xl border border-${themeColor}-300">
+                    💡 请将下方的【知识碎片】拖拽或点击，填入对应的【历史拼图框】中！
+                </p>
+
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 w-full max-w-xl mb-6">
+                    ${currentPuzzleData.map(item => `
+                        <div class="puzzle-slot p-4 rounded-2xl flex flex-col justify-center items-center min-h-[90px] border-${themeColor}-300" 
+                             data-id="${item.id}"
+                             ondragover="handleDragOver(event)"
+                             ondragleave="handleDragLeave(event)"
+                             ondrop="handleDrop(event, '${item.id}')"
+                             onclick="handleSlotClick('${item.id}')">
+                            <span class="text-xs font-bold text-${themeColor}-700 bg-${themeColor}-100 px-2.5 py-0.5 rounded-full mb-1">${item.label}</span>
+                            <div id="slot-content-${item.id}" class="text-sm font-extrabold text-slate-400">❓ 拖入对应描述</div>
+                        </div>
+                    `).join('')}
+                </div>
+
+                <div class="w-full max-w-xl bg-${themeColor}-50 p-4 rounded-3xl border-2 border-${themeColor}-200">
+                    <h4 class="text-xs font-bold text-${themeColor}-700 mb-3 text-left">📌 知识碎片箱（点击或拖拽选择）：</h4>
+                    <div class="grid grid-cols-2 gap-3" id="piecePool">
+                        ${shuffled.map(item => `
+                            <div id="piece-${item.id}" 
+                                 draggable="true" 
+                                 ondragstart="handleDragStart(event, '${item.id}')"
+                                 onclick="handlePieceClick('${item.id}')"
+                                 class="puzzle-piece bg-white border-2 border-${themeColor}-300 hover:border-${themeColor}-500 rounded-2xl p-3 shadow-sm flex items-center space-x-2 text-left">
+                                <span class="text-2xl">${item.icon}</span>
+                                <span class="text-xs font-bold text-slate-700">${item.text}</span>
+                            </div>
+                        `).join('')}
+                    </div>
+                </div>
+            `;
+        }
+
+        let selectedPieceId = null;
+
+        function handleDragStart(e, id) {
+            e.dataTransfer.setData("text/plain", id);
+            playSound('pop');
+        }
+
+        function handleDragOver(e) {
+            e.preventDefault();
+            e.currentTarget.classList.add('hovered');
+        }
+
+        function handleDragLeave(e) {
+            e.currentTarget.classList.remove('hovered');
+        }
+
+        function handleDrop(e, slotId) {
+            e.preventDefault();
+            e.currentTarget.classList.remove('hovered');
+            const pieceId = e.dataTransfer.getData("text/plain");
+            checkPuzzleFit(slotId, pieceId);
+        }
+
+        function handlePieceClick(id) {
+            playSound('pop');
+            document.querySelectorAll('.puzzle-piece').forEach(p => p.classList.remove('ring-4', 'ring-amber-400', 'ring-orange-400'));
+            const el = document.getElementById(`piece-${id}`);
+            if (el) {
+                el.classList.add('ring-4', 'ring-amber-400');
+                selectedPieceId = id;
+            }
+        }
+
+        function handleSlotClick(slotId) {
+            if (selectedPieceId) {
+                checkPuzzleFit(slotId, selectedPieceId);
+                selectedPieceId = null;
+            }
+        }
+
+        function checkPuzzleFit(slotId, pieceId) {
+            if (slotId === pieceId) {
+                playSound('correct');
+                score += 20;
+                updateHeader();
+
+                const pieceData = currentPuzzleData.find(p => p.id === pieceId);
+                const slotContent = document.getElementById(`slot-content-${slotId}`);
+                slotContent.parentElement.className = "p-4 rounded-2xl flex flex-col justify-center items-center min-h-[90px] bg-emerald-100 border-2 border-emerald-400";
+                slotContent.innerHTML = `<span class="text-emerald-800 font-bold">${pieceData.icon} ${pieceData.text} ✅</span>`;
+
+                const pieceEl = document.getElementById(`piece-${pieceId}`);
+                if (pieceEl) pieceEl.remove();
+
+                puzzleState[slotId] = true;
+
+                if (Object.keys(puzzleState).length === currentPuzzleData.length) {
+                    setTimeout(() => {
+                        const container = document.getElementById('gameContainer');
+                        container.innerHTML = `
+                            <div class="text-center space-y-4">
+                                <div class="text-6xl bounce-anim">🏆</div>
+                                <h3 class="title-font text-2xl text-amber-600">太棒了！知识拼图成功！</h3>
+                                <p class="text-sm text-slate-600">你成功解锁了历史重要章节！</p>
+                                <button onclick="backToLobby()" class="cute-btn bg-amber-400 text-white font-bold py-3 px-8 rounded-2xl title-font text-lg">
+                                    返回大厅领取奖励 ⭐
+                                </button>
+                            </div>
+                        `;
+                    }, 500);
+                }
+            } else {
+                playSound('wrong');
+                lives--;
+                updateHeader();
+            }
+        }
+
+
+        // ------------------ 连连看引擎 (单元二、单元四、单元七) ------------------
+        const matchData2 = [
+            { id: 1, text: "阿拉伯与印度商人", icon: "🐫" },
+            { id: 1, text: "马六甲伊斯兰传入途径", icon: "⛵" },
+            { id: 2, text: "《马六甲法典》", icon: "📜" },
+            { id: 2, text: "阐明民事与行政规条", icon: "⚖️" },
+            { id: 3, text: "《马六甲海事法典》", icon: "⚓" },
+            { id: 3, text: "规范海上交易与航行", icon: "🌊" },
+            { id: 4, text: "《联邦宪法》", icon: "📘" },
+            { id: 4, text: "伊斯兰教为联邦宗教", icon: "🕌" }
+        ];
+
+        const matchData4 = [
+            { id: 10, text: "《邦咯条约》1874", icon: "📜" },
+            { id: 10, text: "英国开始干涉霹雳州行政", icon: "🏛️" },
+            { id: 11, text: "参政司制度 (Residen)", icon: "🇬🇧" },
+            { id: 11, text: "削弱苏丹与地方领袖权力", icon: "👑" },
+            { id: 12, text: "橡胶与锡矿开采", icon: "⛏️" },
+            { id: 12, text: "引入大量外籍劳工", icon: "👥" },
+            { id: 13, text: "双重经济结构", icon: "⚖️" },
+            { id: 13, text: "商业化种植与传统农业分化", icon: "🌾" }
+        ];
+
+        const matchData7 = [
+            { id: 20, text: "统治者会议", icon: "🏛️" },
+            { id: 20, text: "遴选最高元首的最高机构", icon: "🗳️" },
+            { id: 21, text: "皇家短剑 (Keris Panjang)", icon: "🗡️" },
+            { id: 21, text: "元首尊贵国家主权象征", icon: "👑" },
+            { id: 22, text: "Muskat 礼服", icon: "👔" },
+            { id: 22, text: "国家元首登基礼服", icon: "✨" },
+            { id: 23, text: "三军最高统帅", icon: "🎖️" },
+            { id: 23, text: "元首在宪法下的军事职权", icon: "🛡️" }
+        ];
+
+        let currentMatchData = [];
+        let selectedMatchCard = null;
+        let matchedPairs = 0;
+
+        function startUnit2Match() {
+            currentMatchData = matchData2;
+            runMatchGame("emerald");
+        }
+
+        function startUnit4Match() {
+            currentMatchData = matchData4;
+            runMatchGame("rose");
+        }
+
+        function startUnit7Match() {
+            currentMatchData = matchData7;
+            runMatchGame("indigo");
+        }
+
+        function runMatchGame(themeColor) {
+            selectedMatchCard = null;
+            matchedPairs = 0;
+
+            const container = document.getElementById('gameContainer');
+            const shuffled = [...currentMatchData].map((item, idx) => ({ ...item, uniqueId: idx }))
+                                       .sort(() => Math.random() - 0.5);
+
+            container.innerHTML = `
+                <p class="text-xs sm:text-sm text-${themeColor}-800 font-bold mb-4 bg-${themeColor}-100 px-4 py-2 rounded-2xl border border-${themeColor}-300">
+                    💡 点击两张含义相同的【历史卡片】把它们连接消除！
+                </p>
+
+                <div class="grid grid-cols-2 sm:grid-cols-4 gap-3.5 w-full max-w-2xl" id="matchGrid">
+                    ${shuffled.map(card => `
+                        <div onclick="clickMatchCard(this, ${card.id}, ${card.uniqueId})"
+                             id="card-${card.uniqueId}"
+                             class="match-card bg-white border-3 border-${themeColor}-300 hover:border-${themeColor}-500 rounded-2xl p-4 cursor-pointer flex flex-col justify-center items-center text-center shadow-sm min-h-[100px]">
+                            <span class="text-3xl mb-1">${card.icon}</span>
+                            <span class="text-xs font-bold text-slate-700">${card.text}</span>
+                        </div>
+                    `).join('')}
+                </div>
+            `;
+        }
+
+        function clickMatchCard(el, matchId, uniqueId) {
+            playSound('pop');
+
+            if (selectedMatchCard && selectedMatchCard.uniqueId === uniqueId) return;
+
+            if (!selectedMatchCard) {
+                selectedMatchCard = { el, matchId, uniqueId };
+                el.classList.add('selected');
+            } else {
+                if (selectedMatchCard.matchId === matchId) {
+                    playSound('correct');
+                    score += 15;
+                    updateHeader();
+
+                    const firstEl = selectedMatchCard.el;
+                    firstEl.classList.add('matched');
+                    el.classList.add('matched');
+
+                    matchedPairs++;
+                    selectedMatchCard = null;
+
+                    if (matchedPairs === currentMatchData.length / 2) {
+                        setTimeout(() => {
+                            const container = document.getElementById('gameContainer');
+                            container.innerHTML = `
+                                <div class="text-center space-y-4">
+                                    <div class="text-6xl bounce-anim">🌟</div>
+                                    <h3 class="title-font text-2xl text-emerald-600">连连看挑战成功！</h3>
+                                    <p class="text-sm text-slate-600">你已经掌握了本单元的关键概念！</p>
+                                    <button onclick="backToLobby()" class="cute-btn bg-emerald-400 text-white font-bold py-3 px-8 rounded-2xl title-font text-lg">
+                                        返回大厅领取奖励 ⭐
+                                    </button>
+                                </div>
+                            `;
+                        }, 600);
+                    }
+                } else {
+                    playSound('wrong');
+                    lives--;
+                    updateHeader();
+
+                    el.classList.add('border-red-400');
+                    setTimeout(() => {
+                        selectedMatchCard.el.classList.remove('selected');
+                        el.classList.remove('border-red-400');
+                        selectedMatchCard = null;
+                    }, 400);
+                }
+            }
+        }
+
+
+        // ------------------ 航海地图多选题引擎 (单元三、单元六) ------------------
+        const mapQuizData3 = [
+            {
+                island: "🏝️ 南岛岛屿",
+                q: "马来语在语言系谱分类中，属于哪一个古老的语系？",
+                options: ["汉藏语系", "南岛语系 (Austronesia)", "阿尔泰语系"],
+                ans: 1
+            },
+            {
+                island: "⛵ 马六甲商业港",
+                q: "古代不同国家的商人来到马六甲，用马来语作为共同沟通工具，这被称为：",
+                options: ["通用语 (Lingua Franca)", "地方方言", "宗教专法语"],
+                ans: 0
+            },
+            {
+                island: "📜 宪法明珠岛",
+                q: "根据《联邦宪法》，现代马来语被确立为什么尊贵地位？",
+                options: ["仅在学校使用", "国语与官方语言", "第二外语"],
+                ans: 1
+            }
+        ];
+
+        const quizData6 = [
+            {
+                island: "🕊️ 独立先驱岛",
+                q: "哪位伟大的国家领袖被尊称为『独立之父』，带领代表团前往伦敦谈判？",
+                options: ["敦阿都拉萨", "东姑阿都拉曼 (Tunku Abdul Rahman)", "敦陈祯禄"],
+                ans: 1
+            },
+            {
+                island: "🤝 联盟凝聚岛",
+                q: "在1955年第一届全国大选中，三大种族携手合作赢下51个议席的政党 Alliance 是：",
+                options: ["联盟党 (Parti Perikatan)", "社会党", "人民党"],
+                ans: 0
+            },
+            {
+                island: "🎆 默迪卡之夜",
+                q: "1957年8月31日，最高元首与人民在默迪卡体育场共高呼了几声『MERDEKA』？",
+                options: ["3 声", "5 声", "7 声"],
+                ans: 2
+            }
+        ];
+
+        let currentNavQuiz = [];
+        let currentIslandIndex = 0;
+
+        function startUnit3MapNav() {
+            currentNavQuiz = mapQuizData3;
+            currentIslandIndex = 0;
+            showMapNavStage("sky");
+        }
+
+        function startUnit6Quiz() {
+            currentNavQuiz = quizData6;
+            currentIslandIndex = 0;
+            showMapNavStage("purple");
+        }
+
+        function showMapNavStage(themeColor = "sky") {
+            const container = document.getElementById('gameContainer');
+
+            if (currentIslandIndex >= currentNavQuiz.length) {
+                container.innerHTML = `
+                    <div class="text-center space-y-4">
+                        <div class="text-6xl bounce-anim">💎</div>
+                        <h3 class="title-font text-2xl text-${themeColor}-600">航程顺利通关！获得历史勋章！</h3>
+                        <p class="text-sm text-slate-600">获得鹦鹉船长与国家英雄赠予的“知识金钥匙”！</p>
+                        <button onclick="backToLobby()" class="cute-btn bg-${themeColor}-400 text-white font-bold py-3 px-8 rounded-2xl title-font text-lg">
+                            返回大厅领取奖励 ⭐
+                        </button>
+                    </div>
+                `;
+                score += 30;
+                updateHeader();
+                playSound('correct');
+                return;
+            }
+
+            const stage = currentNavQuiz[currentIslandIndex];
+
+            container.innerHTML = `
+                <div class="flex items-center space-x-2 mb-4 w-full max-w-md justify-center">
+                    ${currentNavQuiz.map((s, idx) => `
+                        <div class="flex items-center">
+                            <div class="w-10 h-10 rounded-full font-bold flex items-center justify-center border-2 ${idx <= currentIslandIndex ? `bg-${themeColor}-400 text-white border-${themeColor}-600` : 'bg-slate-200 text-slate-400 border-slate-300'}">
+                                ${idx + 1}
+                            </div>
+                            ${idx < currentNavQuiz.length - 1 ? `<div class="w-8 h-1 ${idx < currentIslandIndex ? `bg-${themeColor}-400` : 'bg-slate-300'}"></div>` : ''}
+                        </div>
+                    `).join('')}
+                </div>
+
+                <div class="bg-${themeColor}-50 border-4 border-${themeColor}-300 rounded-3xl p-6 max-w-md w-full text-center shadow-md">
+                    <div class="text-base font-bold text-${themeColor}-700 mb-1">${stage.island}</div>
+                    <div class="text-3xl mb-3">🧭</div>
+                    <p class="text-sm font-extrabold text-slate-700 mb-5">${stage.q}</p>
+
+                    <div class="space-y-3">
+                        ${stage.options.map((opt, i) => `
+                            <button onclick="answerMapQuiz(${i}, '${themeColor}')" 
+                                    class="w-full cute-btn bg-white hover:bg-${themeColor}-100 text-${themeColor}-800 font-bold py-3 px-4 rounded-2xl border-2 border-${themeColor}-300 text-left text-xs sm:text-sm">
+                                ${i + 1}. ${opt}
+                            </button>
+                        `).join('')}
+                    </div>
+                </div>
+            `;
+        }
+
+        function answerMapQuiz(userIdx, themeColor) {
+            const stage = currentNavQuiz[currentIslandIndex];
+            if (userIdx === stage.ans) {
+                playSound('correct');
+                score += 15;
+                updateHeader();
+                currentIslandIndex++;
+                showMapNavStage(themeColor);
+            } else {
+                playSound('wrong');
+                lives--;
+                updateHeader();
+            }
+        }
+
+        // 页面初始化
+        updateHeader();
+    </script>
+</body>
+</html>
